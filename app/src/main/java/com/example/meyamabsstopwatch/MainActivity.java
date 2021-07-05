@@ -1,99 +1,81 @@
 package com.example.meyamabsstopwatch;
 
 import android.os.Bundle;
+import android.app.Activity;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.view.View;
-import android.widget.Button;
+import java.util.Locale;
 import android.widget.TextView;
-
-import androidx.appcompat.app.AppCompatActivity;
-public class MainActivity extends AppCompatActivity {
-    TextView timer ;
-    Button start, pause, reset;
-    long MillisecondTime, StartTime, TimeBuff, UpdateTime = 0L ;
-    Handler handler;
-    int Seconds, Minutes, MilliSeconds ;
-
+public class MainActivity extends Activity {
+    private int sec = 0;
+    private boolean is_running;
+    private boolean was_running;
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        timer = (TextView)findViewById(R.id.tvTimer);
-        start = (Button)findViewById(R.id.btStart);
-        pause = (Button)findViewById(R.id.btPause);
-        reset = (Button)findViewById(R.id.btReset);
-
-        handler = new Handler() ;
-
-        start.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                StartTime = SystemClock.uptimeMillis();
-                handler.postDelayed(runnable, 0);
-
-                reset.setEnabled(false);
-
-            }
-        });
-
-        pause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                TimeBuff += MillisecondTime;
-
-                handler.removeCallbacks(runnable);
-
-                reset.setEnabled(true);
-
-            }
-        });
-
-        reset.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                MillisecondTime = 0L ;
-                StartTime = 0L ;
-                TimeBuff = 0L ;
-                UpdateTime = 0L ;
-                Seconds = 0 ;
-                Minutes = 0 ;
-                MilliSeconds = 0 ;
-
-                timer.setText("00:00:00");
-
-            }
-        });
-
-    }
-
-    public Runnable runnable = new Runnable() {
-
-        public void run() {
-
-            MillisecondTime = SystemClock.uptimeMillis() - StartTime;
-
-            UpdateTime = TimeBuff + MillisecondTime;
-
-            Seconds = (int) (UpdateTime / 1000);
-
-            Minutes = Seconds / 60;
-
-            Seconds = Seconds % 60;
-
-            MilliSeconds = (int) (UpdateTime % 1000);
-
-            timer.setText("" + Minutes + ":"
-                    + String.format("%02d", Seconds) + ":"
-                    + String.format("%03d", MilliSeconds));
-
-            handler.postDelayed(this, 0);
+        if (savedInstanceState != null) {
+            sec = savedInstanceState.getInt("seconds");
+            is_running = savedInstanceState.getBoolean("running");
+            was_running = savedInstanceState .getBoolean("wasRunning");
         }
-
-    };
-
+        running_Timer();
+    }
+    @Override
+    public void onSaveInstanceState(
+            Bundle savedInstanceState)
+    {
+        savedInstanceState.putInt("seconds", sec);
+        savedInstanceState.putBoolean("running", is_running);
+        savedInstanceState.putBoolean("wasRunning", was_running);
+    }
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+        was_running = is_running;
+        is_running = false;
+    }
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        if (was_running) {
+            is_running = true;
+        }
+    }
+    public void onClickStart(View view)
+    {
+        is_running = true;
+    }
+    public void onClickStop(View view)
+    {
+        is_running = false;
+    }
+    public void onClickReset(View view)
+    {
+        is_running = false;
+        sec = 0;
+    }
+    private void running_Timer()
+    {
+        final TextView t_View = (TextView)findViewById(R.id.time_view);
+        final Handler handle = new Handler();
+        handle.post(new Runnable() {
+            @Override
+            public void run()
+            {
+                int hrs = sec / 3600;
+                int mins = (sec % 3600) / 60;
+                int secs = sec % 60;
+                String time_t = String .format(Locale.getDefault(), "    %d:%02d:%02d   ", hrs,mins, secs);
+                t_View.setText(time_t);
+                if (is_running) {
+                    sec++;
+                }
+                handle.postDelayed(this, 1000);
+            }
+        });
+    }
 }
